@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .upload-container {
+            margin: 30px 0;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #photoDisplay {
+            margin-top: 30px;
+        }
+        #photoDisplay img {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Photo Upload</h1>
+
+    <div class="upload-container">
+        <input type="file" id="photoInput" accept="image/*">
+        <br>
+        <button onclick="uploadPhoto()">Upload Photo</button>
+    </div>
+
+    <div id="message"></div>
+
+    <div id="photoDisplay"></div>
+
+    <script>
+        // Load latest photo on page load
+        window.onload = function() {
+            fetch('/latest')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.filename) {
+                        displayPhoto(data.filename);
+                    }
+                });
+        };
+
+        function uploadPhoto() {
+            const fileInput = document.getElementById('photoInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showMessage('Please select a photo first', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('photo', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showMessage(data.error, 'error');
+                } else {
+                    showMessage('Photo uploaded successfully!', 'success');
+                    displayPhoto(data.filename);
+                    fileInput.value = '';
+                }
+            })
+            .catch(error => {
+                showMessage('Upload failed: ' + error, 'error');
+            });
+        }
+
+        function displayPhoto(filename) {
+            const photoDisplay = document.getElementById('photoDisplay');
+            photoDisplay.innerHTML = `<img src="/uploads/${filename}" alt="Uploaded photo">`;
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = text;
+            setTimeout(() => {
+                messageDiv.textContent = '';
+                messageDiv.className = 'message';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
